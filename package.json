@@ -1,5 +1,11 @@
 {
   "name": "adia-backend",
   "version": "1.0.0",
-  "type": "module"
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "@upstash/ratelimit": "^2.1.0",
+    "@upstash/redis": "^1.39.0"
+  }
 }
