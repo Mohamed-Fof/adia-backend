@@ -7,7 +7,10 @@ const ALLOWED_ORIGINS = [
   ...(process.env.EXTRA_ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean)
 ];
 
-const MODEL = 'claude-opus-4-5';
+// Modèle configurable depuis Vercel, sans toucher au code.
+const MODEL = process.env.MODEL || 'claude-opus-4-5';
+// TEMPORAIRE : comparaison de modèles. Liste fermée, tous au tarif du modèle par défaut ou moins.
+const MODELES_COMPARAISON = new Set(['claude-opus-4-5', 'claude-sonnet-5', 'claude-haiku-4-5']);
 const MAX_TOKENS = 1000;
 const MAX_MESSAGES = 30;
 const MAX_USER_CHARS = 1000;
@@ -167,7 +170,7 @@ module.exports = async function handler(req, res) {
         'content-type': 'application/json'
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: (corps && MODELES_COMPARAISON.has(corps.modele)) ? corps.modele : MODEL,
         max_tokens: MAX_TOKENS,
         system: SYSTEM_PROMPT,
         messages
