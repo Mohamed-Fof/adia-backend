@@ -144,8 +144,9 @@ module.exports = async function handler(req, res) {
       const cv = parseCv(corps.cv);
       if (cv === false) return res.status(400).json({ error: 'Pièce jointe invalide' });
       const dernier = messages[messages.length - 1].content.replace('[DOSSIER_COMPLET]', '').trim();
-      const emailOk = await sendSummaryEmail(dernier, messages, cv);
-      return res.status(200).json({ emailOk });
+      const envoi = await sendSummaryEmail(dernier, messages, cv);
+      // « raison » reste volontairement grossière : elle aide au diagnostic sans rien révéler d'interne.
+      return res.status(200).json(envoi.ok ? { emailOk: true } : { emailOk: false, raison: envoi.raison });
     }
 
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -206,7 +207,7 @@ async function sendSummaryEmail(cleanReply, messages, cv) {
   const to = process.env.NOTIFY_EMAIL;
   if (!process.env.RESEND_API_KEY || !to) {
     console.error('Email non envoyé : RESEND_API_KEY ou NOTIFY_EMAIL manquant');
-    return false;
+    return { ok: false, raison: 'configuration' };
   }
 
   // Extraire le résumé structuré
@@ -283,7 +284,10 @@ async function sendSummaryEmail(cleanReply, messages, cv) {
 
   if (!emailRes.ok) {
     console.error('Erreur Resend', emailRes.status);
-    return false;
+    // 403 et 422 : destinataire refusé ou expéditeur non autorisé. 401 : clé invalide.
+    const raison = emailRes.status === 401 ? 'cle_invalide'
+      : (emailRes.status === 403 || emailRes.status === 422) ? 'destinataire_refuse' : 'envoi_echoue';
+    return { ok: false, raison };
   }
-  return true;
+  return { ok: true };
 }
