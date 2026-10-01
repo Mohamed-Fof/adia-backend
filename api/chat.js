@@ -14,6 +14,11 @@ const MAX_USER_CHARS = 1000;
 const MAX_ASSISTANT_CHARS = 4000;
 const MAX_TOTAL_CHARS = 20000;
 const CV_TAILLE_MAX = 2.6 * 1024 * 1024;   // le corps d'une requête Vercel est plafonné à 4,5 Mo
+// Expéditeur. Tant qu'aucun domaine n'est vérifié chez Resend, onboarding@resend.dev est le seul
+// possible, et il n'autorise l'envoi que vers l'adresse du compte Resend. Avec un domaine vérifié,
+// définir MAIL_FROM (ex. "Momo <contact@mondomaine.fr>") suffit à sortir du spam.
+const MAIL_FROM = process.env.MAIL_FROM || 'Momo MF Consulting <onboarding@resend.dev>';
+
 const CV_TYPES = new Set(['application/pdf', 'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/octet-stream']);
 
@@ -255,6 +260,10 @@ async function sendSummaryEmail(cleanReply, messages, cv) {
 
   const textFallback = `Nouveau dossier MF Consulting\n\nRÉSUMÉ :\n${resumeRaw}\n\nCONVERSATION :\n${messages.map(m => `${m.role === 'user' ? 'ÉTUDIANT' : 'Momo'} : ${m.content}`).join('\n\n')}`;
 
+  // Un objet nominatif et sans majuscules superflues est bien mieux traité par les filtres anti-spam.
+  const nom = (resumeRaw.match(/\|\s*Nom complet\s*\|\s*([^|\n]{2,60}?)\s*\|/i) || [])[1];
+  const sujet = nom ? `Nouveau contact : ${nom.trim()}` : 'Nouveau contact depuis le portfolio';
+
   const emailRes = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -262,9 +271,10 @@ async function sendSummaryEmail(cleanReply, messages, cv) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      from: 'Momo <onboarding@resend.dev>',
+      from: MAIL_FROM,
       to: [to],
-      subject: cv ? 'Nouveau contact (CV joint) - MF Consulting' : 'Nouveau contact - MF Consulting',
+      reply_to: to,
+      subject: cv ? `${sujet} (CV joint)` : sujet,
       html,
       text: textFallback,
       ...(cv ? { attachments: [{ filename: cv.nom, content: cv.contenu }] } : {})

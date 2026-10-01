@@ -16,7 +16,7 @@ vercel login
 
 ### 3. Déployer
 ```bash
-cd ~/Desktop/adia-backend
+cd ~/Desktop/momo-backend
 vercel --prod
 ```
 
@@ -25,12 +25,15 @@ Vercel te donnera une URL de type `https://adia-backend-xxx.vercel.app`.
 ### 4. Ajouter la variable d'environnement
 
 Dans le dashboard Vercel (vercel.com) :
-- Ouvre ton projet `adia-backend`
+- Ouvre ton projet sur Vercel
 - Va dans **Settings → Environment Variables**
 - Ajoute :
   - `ANTHROPIC_API_KEY` : ta clé API Anthropic (commence par `sk-ant-...`)
   - `RESEND_API_KEY` : clé Resend pour l'email de résumé de dossier
-  - `NOTIFY_EMAIL` : adresse qui reçoit les dossiers (sans elle, aucun email n'est envoyé)
+  - `NOTIFY_EMAIL` : adresse qui reçoit les contacts. Avec l'expéditeur par défaut
+    `onboarding@resend.dev`, Resend n'autorise l'envoi **que vers l'adresse du compte Resend**.
+  - `MAIL_FROM` *(recommandé)* : expéditeur sur un domaine vérifié chez Resend,
+    par exemple `Momo <contact@mondomaine.fr>`. C'est ce qui fait sortir les mails du spam.
   - `EXTRA_ALLOWED_ORIGINS` *(optionnel, dev local)* : ex. `http://localhost:5500,http://127.0.0.1:5500`
   - Rate limiting partagé *(recommandé)* : installer l'intégration **Upstash Redis** depuis
     Vercel → Storage → Marketplace. Elle ajoute `KV_REST_API_URL` et `KV_REST_API_TOKEN`
